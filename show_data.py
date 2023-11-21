@@ -5,6 +5,12 @@ from matplotlib import image
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
+"""
+
+THIS PYTHON FILE IS WHERE EVERYTHING RELATED TO DATA VISUALIZATION IS STORED
+
+"""
+
 BASE_PATH = "C:\\Users\\diogo\\OneDrive\\Ambiente de Trabalho\\Projects\\Sistema de Reconhecimento de Padrões\\byclass"
 
 def create_sample_visualization(base_path, sample_per_folder=1):
@@ -83,20 +89,12 @@ def count_data_per_trainingFolder(path=BASE_PATH):
     return count_dict
 
 def print_dict(dict):
-
     for key, value in dict.items():
         print(f'{key}: {value}')
 
+#samples = create_sample_visualization(BASE_PATH, 1)
 
+#isualize_sample_training_data(samples)
 
-
-
-
-samples = create_sample_visualization(BASE_PATH, 1)
-
-visualize_sample_training_data(samples)
-"""
-count_dict = count_data_per_trainingFolder()
-print_dict(count_dict)
-
-"""    
+COUNT_DICT = count_data_per_trainingFolder()
+#print_dict(count_dict)

@@ -4,6 +4,13 @@ from tkinter import filedialog, font
 from PIL import Image, ImageTk
 from data_preparation import preprocess_image
 
+
+"""
+
+THIS PYTHON FILE IS THE INTERFACE OF THE SYSTEM
+
+"""
+
 # GUI basic setup
 window = tk.Tk()
 window.title("Pattern Recognition System")
