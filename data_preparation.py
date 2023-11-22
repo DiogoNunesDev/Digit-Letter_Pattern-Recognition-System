@@ -198,7 +198,7 @@ def get_unbalanced_classes(path=BASE_PATH):
 #ROTATION
 
 def augmentation_by_rotation(image_path, direction):
-  img = cv2.imread(image_path)
+  original_image = cv2.imread(image_path)
   
   #Center of the image
   center = (128 // 2, 128 // 2)
@@ -207,15 +207,16 @@ def augmentation_by_rotation(image_path, direction):
   
   rotation_matrix = cv2.getRotationMatrix2D(center, angle, 1.0)
   
-  rotated_image = cv2.warpAffine(img, rotation_matrix, (128,128), borderValue=(255, 255, 255))
+  rotated_image = cv2.warpAffine(original_image, rotation_matrix, (128,128), borderValue=(255, 255, 255))
   
-  cv2.imshow("Original Image", img)
+  cv2.imshow("Original Image", original_image)
   cv2.imshow("Rotated Image", rotated_image)
   cv2.waitKey(0)
   cv2.destroyAllWindows()
   
   
 #augmentation_by_rotation("Inputs\hsf_1_00016.png", 'left')
+#augmentation_by_rotation("Inputs\hsf_1_00016.png", 'right')
 
 #Resizing
 
@@ -239,3 +240,22 @@ def augmentation_by_resizing(image_path):
   
 
 #augmentation_by_resizing("Inputs\hsf_1_00016.png")
+
+#TRANSLATION
+
+def augmentation_by_translation(image_path, shift_x, shift_y):
+  original_image = cv2.imread(image_path)
+  
+  translation_shifting_matrix = np.float32([[1, 0, shift_x], [0, 1, shift_y]])
+  
+  shifted_image = cv2.warpAffine(original_image, translation_shifting_matrix, (128, 128), borderValue=(255, 255, 255))
+  
+  cv2.imshow("Original Image", original_image)
+  cv2.imshow("Shifted Image", shifted_image)
+  cv2.waitKey(0)
+  cv2.destroyAllWindows()
+
+#augmentation_by_translation("Inputs\hsf_1_00016.png", 10, 10)
+#augmentation_by_translation("Inputs\hsf_1_00016.png", -10, -10)
+#augmentation_by_translation("Inputs\hsf_1_00016.png", -10, 10)
+#augmentation_by_translation("Inputs\hsf_1_00016.png", 10, -10)  
