@@ -10,7 +10,7 @@ THIS FILE IS RESPONSABLE FOR EVERYTHING CONCERNING DATA PREPROCESSING
 
 """
 
-BASE_PATH = "C:\\Users\\diogo\\OneDrive\\Ambiente de Trabalho\\Projects\\Sistema de Reconhecimento de Padrões\\byclass"
+BASE_PATH = "C:\\Users\\diogo\\OneDrive\\Ambiente de Trabalho\\Projects\\Sistema de Reconhecimento de Padroes\\byclass"
 
 #Auxiliar functions for the start of the dataset analysis
 
@@ -161,7 +161,7 @@ def preprocess_image(input_image_path):
 
 
 
-#Balancing classes  
+#Balancing classes 
 
 NUMBER_OF_CLASSES = 62
 
@@ -181,12 +181,12 @@ def get_average_images_trainingSet(total_images=total_training_images):
 AVERAGE = 11801
 
 def is_folder_below_threashold(file_count, threshold_min, threshold_max):
-    return file_count >= threshold_min and file_count <= threshold_max 
+    return threshold_min <= file_count <= threshold_max 
 
   
 
 
-#DATA AUGMENTATION
+#DATA AUGMENTATION -> MAKE SURE TO HAVE THE LIBRARIES USED INSTALED IN THE DATASET FOLDER!
 
 #ROTATION
 
@@ -257,42 +257,40 @@ if 5001 > x < 9000 -> *2
 if x > 9000 -> Do Nothing
 """
 
-def implement_augmentation(dataset_path= BASE_PATH):
+def implement_augmentation(dataset_path=BASE_PATH):
   for folder in os.listdir(dataset_path):
     folder_path = os.path.join(dataset_path, folder)
     for sub_folder in os.listdir(folder_path):
       if sub_folder.startswith("train_"):
         sub_folder_path = os.path.join(folder_path, sub_folder)
         augment(sub_folder, sub_folder_path)
+        print(sub_folder + " is complete!")
+  
+  print("AUGMENTATION COMPLETE!")
         
 def test(folder, folder_path):
-  count = len(os.listdir(folder_path))
   
-  if is_folder_below_threashold(count, 1, 3):
+  count = len(os.listdir(folder_path))
+  if is_folder_below_threashold(count, 1, 5):
     for file in os.listdir(folder_path):
-      if count >= count*(1+2):
-        break
-      
       file_path = os.path.join(folder_path, file)
       image_name = folder + "_" + str(count).zfill(5)
+      img = cv2.imread(file_path)
+      print(img.shape[:2])
       augmentation_by_rotation(file_path, 'right', image_name, folder_path)
       count += 1
       image_name = folder + "_" + str(count).zfill(5)
       augmentation_by_rotation(file_path, 'left', image_name, folder_path)
-      count+= 1
+      count += 1
     
-test("train_4a", "Inputs")
+#test("train_41", "Inputs")
 
 def augment(folder, folder_path):
-  items = os.listdir(folder_path)
-  count = len(items)
+  count = len(os.listdir(folder_path))
   if is_folder_below_threashold(count, 0, 2200):
     
     for file in os.listdir(folder_path):
-      #5 new images per image
-      if count >= count*(1+5): # 1-> already in folder, 5-> new per image
-        break
-      
+      #5 new images per image 
       file_path = os.path.join(folder_path, file)
       image_name = folder + "_" + str(count).zfill(5)
       augmentation_by_rotation(file_path, 'right', image_name, folder_path)
@@ -300,25 +298,23 @@ def augment(folder, folder_path):
       
       image_name = folder + "_" + str(count).zfill(5)
       augmentation_by_rotation(file_path, 'left', image_name, folder_path)
-      count+= 1
+      count += 1
       
       image_name = folder + "_" + str(count).zfill(5)
       augmentation_by_resizing(file_path, image_name, folder_path)
-      count+= 1
+      count += 1
       
       image_name = folder + "_" + str(count).zfill(5)
       augmentation_by_translation(file_path, 10, 10, image_name, folder_path)
-      count+= 1
+      count += 1
       
       image_name = folder + "_" + str(count).zfill(5)
       augmentation_by_translation(file_path, -10, -10, image_name, folder_path)
-      count+= 1
+      count += 1
       
   elif is_folder_below_threashold(count, 2201, 3500):
     
     for file in os.listdir(folder_path):
-      if count >= count*(1+4): # 1-> already in folder, 4-> new per image
-        break
       #4 new images per image
       file_path = os.path.join(folder_path, file)
       image_name = folder + "_" + str(count).zfill(5)
@@ -327,21 +323,19 @@ def augment(folder, folder_path):
       
       image_name = folder + "_" + str(count).zfill(5)
       augmentation_by_rotation(file_path, 'left', image_name, folder_path)
-      count+= 1
+      count += 1
       
       image_name = folder + "_" + str(count).zfill(5)
       augmentation_by_resizing(file_path, image_name, folder_path)
-      count+= 1
+      count += 1
       
       image_name = folder + "_" + str(count).zfill(5)
       augmentation_by_translation(file_path, 10, 10, image_name, folder_path)
-      count+= 1
+      count += 1
       
   elif is_folder_below_threashold(count, 3501, 5000):
     
     for file in os.listdir(folder_path):
-      if count >= count*(1+3): # 1-> already in folder, 3-> new per image
-        break
       # 3 new images per image
       file_path = os.path.join(folder_path, file)
       image_name = folder + "_" + str(count).zfill(5)
@@ -350,24 +344,23 @@ def augment(folder, folder_path):
       
       image_name = folder + "_" + str(count).zfill(5)
       augmentation_by_rotation(file_path, 'left', image_name, folder_path)
-      count+= 1
+      count += 1
       
       image_name = folder + "_" + str(count).zfill(5)
       augmentation_by_resizing(file_path, image_name, folder_path)
-      count+= 1
+      count += 1
       
-  elif is_folder_below_threashold(folder, 5001, 9000):
+  elif is_folder_below_threashold(count, 5001, 9000):
     
     for file in os.listdir(folder_path):
-      if count >= count*(1+2): # 1-> already in folder, 2-> new per image
-        break
       # Only 2 new images per image
-      file_path = os.path.join(count, file)
+      file_path = os.path.join(folder_path, file)
       image_name = folder + "_" + str(count).zfill(5)
       augmentation_by_rotation(file_path, 'right', image_name, folder_path)
       count += 1
+      
       image_name = folder + "_" + str(count).zfill(5)
       augmentation_by_rotation(file_path, 'left', image_name, folder_path)
-      count+= 1
+      count += 1
   
-        
+#implement_augmentation() -> ONE TIME USE!!!!

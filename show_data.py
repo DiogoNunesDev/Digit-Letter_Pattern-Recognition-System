@@ -11,7 +11,7 @@ THIS PYTHON FILE IS WHERE EVERYTHING RELATED TO DATA VISUALIZATION IS STORED
 
 """
 
-BASE_PATH = "C:\\Users\\diogo\\OneDrive\\Ambiente de Trabalho\\Projects\\Sistema de Reconhecimento de Padrões\\byclass"
+BASE_PATH = "C:\\Users\\diogo\\OneDrive\\Ambiente de Trabalho\\Projects\\Sistema de Reconhecimento de Padroes\\byclass"
 
 def create_sample_visualization(base_path, sample_per_folder=1):
     """
