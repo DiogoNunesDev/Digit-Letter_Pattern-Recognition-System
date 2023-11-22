@@ -71,22 +71,19 @@ def visualize_sample_training_data(data):
     plt.tight_layout()
     plt.show()
 
-def count_data_per_trainingFolder(path=BASE_PATH):
+def count_data_per_training_folder(path=BASE_PATH):
 
     count_dict= {}
-    count=0
     for folder in os.listdir(path):
         folder_path = os.path.join(path, folder)
         for sub_folder in os.listdir(folder_path):
             if sub_folder.startswith("train_"):
                 train_folder_path = os.path.join(folder_path, sub_folder)
-                for file in os.listdir(train_folder_path):
-                    count +=1
-                
-                count_dict[sub_folder] = count
-                count = 0
+                items = os.listdir(train_folder_path)
+                count_dict[sub_folder] = len(items)
     
     return count_dict
+
 
 def print_dict(dict):
     for key, value in dict.items():
@@ -94,7 +91,7 @@ def print_dict(dict):
 
 #samples = create_sample_visualization(BASE_PATH, 1)
 
-#isualize_sample_training_data(samples)
+#visualize_sample_training_data(samples)
 
-COUNT_DICT = count_data_per_trainingFolder()
-#print_dict(count_dict)
+#COUNT_DICT = count_data_per_training_folder()
+

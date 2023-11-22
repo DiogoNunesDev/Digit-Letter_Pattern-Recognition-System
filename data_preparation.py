@@ -3,7 +3,6 @@ import numpy as np
 from PIL import Image, ImageOps, ImageFilter, ImageDraw
 import uuid
 import cv2
-from show_data import COUNT_DICT
 
 """
 
@@ -181,25 +180,18 @@ def get_average_images_trainingSet(total_images=total_training_images):
 
 AVERAGE = 11801
 
-def get_unbalanced_classes(path=BASE_PATH):
-  unbalanced_classes = []
-  for key, value in COUNT_DICT.items():
-    if value <= 11801:
-      unbalanced_classes.append(key)  
-  return unbalanced_classes
+def is_folder_below_threashold(file_count, threshold_min, threshold_max):
+    return file_count >= threshold_min and file_count <= threshold_max 
 
-#unbalanced_classes = get_unbalanced_classes()
-
-#print(unbalanced_classes)
+  
 
 
 #DATA AUGMENTATION
 
 #ROTATION
 
-def augmentation_by_rotation(image_path, direction):
+def augmentation_by_rotation(image_path, direction, img_name, folder_path):
   original_image = cv2.imread(image_path)
-  
   #Center of the image
   center = (128 // 2, 128 // 2)
 
@@ -208,11 +200,9 @@ def augmentation_by_rotation(image_path, direction):
   rotation_matrix = cv2.getRotationMatrix2D(center, angle, 1.0)
   
   rotated_image = cv2.warpAffine(original_image, rotation_matrix, (128,128), borderValue=(255, 255, 255))
-  
-  cv2.imshow("Original Image", original_image)
-  cv2.imshow("Rotated Image", rotated_image)
-  cv2.waitKey(0)
-  cv2.destroyAllWindows()
+
+  cv2.imwrite(folder_path +"\\"+ img_name + ".png", rotated_image)
+
   
   
 #augmentation_by_rotation("Inputs\hsf_1_00016.png", 'left')
@@ -220,7 +210,7 @@ def augmentation_by_rotation(image_path, direction):
 
 #Resizing
 
-def augmentation_by_resizing(image_path):
+def augmentation_by_resizing(image_path, img_name, folder_path):
   original_image = cv2.imread(image_path)
     
   resized_image = cv2.resize(original_image, (64, 64), interpolation=cv2.INTER_AREA)
@@ -233,29 +223,151 @@ def augmentation_by_resizing(image_path):
   canvas[y_offset:y_offset+64, x_offset:x_offset+64] = resized_image
   
     
-  cv2.imshow("Origianl Image", original_image)
-  cv2.imshow("Resized Image", canvas)
-  cv2.waitKey(0)
-  cv2.destroyAllWindows()
+  cv2.imwrite(folder_path +"\\"+ img_name + ".png", canvas)
   
 
 #augmentation_by_resizing("Inputs\hsf_1_00016.png")
 
 #TRANSLATION
 
-def augmentation_by_translation(image_path, shift_x, shift_y):
+def augmentation_by_translation(image_path, shift_x, shift_y, img_name, folder_path):
   original_image = cv2.imread(image_path)
   
   translation_shifting_matrix = np.float32([[1, 0, shift_x], [0, 1, shift_y]])
   
   shifted_image = cv2.warpAffine(original_image, translation_shifting_matrix, (128, 128), borderValue=(255, 255, 255))
   
-  cv2.imshow("Original Image", original_image)
-  cv2.imshow("Shifted Image", shifted_image)
-  cv2.waitKey(0)
-  cv2.destroyAllWindows()
+  cv2.imwrite(folder_path +"\\"+ img_name + ".png", shifted_image)
 
 #augmentation_by_translation("Inputs\hsf_1_00016.png", 10, 10)
 #augmentation_by_translation("Inputs\hsf_1_00016.png", -10, -10)
 #augmentation_by_translation("Inputs\hsf_1_00016.png", -10, 10)
 #augmentation_by_translation("Inputs\hsf_1_00016.png", 10, -10)  
+
+
+
+#AUGMENTATION IMPLEMENTATION -> 1 time use only!
+
+"""
+X = Number of files in folder
+if x < 2200 -> *5
+if 2201 > x < 3500 -> *4
+if 3501 > x < 5000 -> *3
+if 5001 > x < 9000 -> *2
+if x > 9000 -> Do Nothing
+"""
+
+def implement_augmentation(dataset_path= BASE_PATH):
+  for folder in os.listdir(dataset_path):
+    folder_path = os.path.join(dataset_path, folder)
+    for sub_folder in os.listdir(folder_path):
+      if sub_folder.startswith("train_"):
+        sub_folder_path = os.path.join(folder_path, sub_folder)
+        augment(sub_folder, sub_folder_path)
+        
+def test(folder, folder_path):
+  count = len(os.listdir(folder_path))
+  
+  if is_folder_below_threashold(count, 1, 3):
+    for file in os.listdir(folder_path):
+      if count >= count*(1+2):
+        break
+      
+      file_path = os.path.join(folder_path, file)
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_rotation(file_path, 'right', image_name, folder_path)
+      count += 1
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_rotation(file_path, 'left', image_name, folder_path)
+      count+= 1
+    
+test("train_4a", "Inputs")
+
+def augment(folder, folder_path):
+  items = os.listdir(folder_path)
+  count = len(items)
+  if is_folder_below_threashold(count, 0, 2200):
+    
+    for file in os.listdir(folder_path):
+      #5 new images per image
+      if count >= count*(1+5): # 1-> already in folder, 5-> new per image
+        break
+      
+      file_path = os.path.join(folder_path, file)
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_rotation(file_path, 'right', image_name, folder_path)
+      count += 1
+      
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_rotation(file_path, 'left', image_name, folder_path)
+      count+= 1
+      
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_resizing(file_path, image_name, folder_path)
+      count+= 1
+      
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_translation(file_path, 10, 10, image_name, folder_path)
+      count+= 1
+      
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_translation(file_path, -10, -10, image_name, folder_path)
+      count+= 1
+      
+  elif is_folder_below_threashold(count, 2201, 3500):
+    
+    for file in os.listdir(folder_path):
+      if count >= count*(1+4): # 1-> already in folder, 4-> new per image
+        break
+      #4 new images per image
+      file_path = os.path.join(folder_path, file)
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_rotation(file_path, 'right', image_name, folder_path)
+      count += 1
+      
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_rotation(file_path, 'left', image_name, folder_path)
+      count+= 1
+      
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_resizing(file_path, image_name, folder_path)
+      count+= 1
+      
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_translation(file_path, 10, 10, image_name, folder_path)
+      count+= 1
+      
+  elif is_folder_below_threashold(count, 3501, 5000):
+    
+    for file in os.listdir(folder_path):
+      if count >= count*(1+3): # 1-> already in folder, 3-> new per image
+        break
+      # 3 new images per image
+      file_path = os.path.join(folder_path, file)
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_rotation(file_path, 'right', image_name, folder_path)
+      count += 1
+      
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_rotation(file_path, 'left', image_name, folder_path)
+      count+= 1
+      
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_resizing(file_path, image_name, folder_path)
+      count+= 1
+      
+  elif is_folder_below_threashold(folder, 5001, 9000):
+    
+    for file in os.listdir(folder_path):
+      if count >= count*(1+2): # 1-> already in folder, 2-> new per image
+        break
+      # Only 2 new images per image
+      file_path = os.path.join(count, file)
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_rotation(file_path, 'right', image_name, folder_path)
+      count += 1
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_rotation(file_path, 'left', image_name, folder_path)
+      count+= 1
+  
+        
