@@ -1,6 +1,6 @@
 import os
 import numpy as np
-from PIL import Image, ImageOps, ImageFilter, ImageDraw
+from PIL import Image, ImageFilter
 import uuid
 import cv2
 
@@ -267,23 +267,6 @@ def implement_augmentation(dataset_path=BASE_PATH):
         print(sub_folder + " is complete!")
   
   print("AUGMENTATION COMPLETE!")
-        
-def test(folder, folder_path):
-  
-  count = len(os.listdir(folder_path))
-  if is_folder_below_threashold(count, 1, 5):
-    for file in os.listdir(folder_path):
-      file_path = os.path.join(folder_path, file)
-      image_name = folder + "_" + str(count).zfill(5)
-      img = cv2.imread(file_path)
-      print(img.shape[:2])
-      augmentation_by_rotation(file_path, 'right', image_name, folder_path)
-      count += 1
-      image_name = folder + "_" + str(count).zfill(5)
-      augmentation_by_rotation(file_path, 'left', image_name, folder_path)
-      count += 1
-    
-#test("train_41", "Inputs")
 
 def augment(folder, folder_path):
   count = len(os.listdir(folder_path))
