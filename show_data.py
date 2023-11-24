@@ -11,7 +11,7 @@ THIS PYTHON FILE IS WHERE EVERYTHING RELATED TO DATA VISUALIZATION IS STORED
 
 """
 
-BASE_PATH = "C:\\Users\\diogo\\OneDrive\\Ambiente de Trabalho\\Projects\\Sistema de Reconhecimento de Padroes\\byclass"
+BASE_PATH = "C:\\Users\\diogo\\OneDrive\\Ambiente de Trabalho\\Datasets\\by_class"
 
 def create_sample_visualization(base_path, sample_per_folder=1):
     """
@@ -37,7 +37,6 @@ def create_sample_visualization(base_path, sample_per_folder=1):
             
                 samples[train_folder_path] = random.sample(image_list, min(sample_per_folder, len(image_list)))
     return samples
-
 
 def visualize_sample_training_data(data):
     rows = 11  # Número total de linhas
@@ -84,10 +83,11 @@ def count_data_per_training_folder(path=BASE_PATH):
     
     return count_dict
 
-
 def print_dict(dict):
     for key, value in dict.items():
         print(f'{key}: {value}')
+
+
 
 #samples = create_sample_visualization(BASE_PATH, 1)
 

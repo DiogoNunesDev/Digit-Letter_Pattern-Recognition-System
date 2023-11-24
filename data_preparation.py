@@ -10,11 +10,16 @@ THIS FILE IS RESPONSABLE FOR EVERYTHING CONCERNING DATA PREPROCESSING
 
 """
 
-BASE_PATH = "C:\\Users\\diogo\\OneDrive\\Ambiente de Trabalho\\Projects\\Sistema de Reconhecimento de Padroes\\byclass"
+BASE_PATH = "C:\\Users\\diogo\\OneDrive\\Ambiente de Trabalho\Datasets\\by_class"
 
-#Auxiliar functions for the start of the dataset analysis
 
-def clean_mit_data(base_path):
+"""
+----------------------------------------------------------------------------------------------------------------------------------------------------
+Auxiliar functions to prepare the dataset analysis
+
+"""
+
+def clean_mit_data(base_path=BASE_PATH):
 
   for folder in os.listdir(base_path):
     folder_path = os.path.join(base_path, folder)
@@ -28,7 +33,7 @@ def clean_mit_data(base_path):
       if content.lower().endswith('.mit'):
         os.remove(content_path)
 
-def check_corruption(base_path):
+def check_corruption(base_path=BASE_PATH):
   for folder in os.listdir(base_path):
     folder_path = os.path.join(base_path, folder)
     # iterate over the Character folders
@@ -46,65 +51,11 @@ def check_corruption(base_path):
             os.remove(image_path)
 
 
+"""
+----------------------------------------------------------------------------------------------------------------------------------------------------
+Inputed data transformation section
 
-
-#Inputed data transformation section
-
-def preprocess_inputed_image(input_image_path):
-  """
-  This function is used everytime we receive a new image as an input. It will transform it in a way that it looks like the ones in the dataset. 
-  """
-
-  original_image = Image.open(input_image_path)
-  
-  #Convert the image to a NumPy array, to access each pixel and change it to a greyscale
-  image_array = np.array(original_image)
-
-  height, width, _ = image_array.shape
-  
-  #Make the image grayscale and use contrast
-  threshold = 100
-  for i in range(height):
-    for j in range(width):
-      pixel = image_array[i, j]
-      red = pixel[0]
-      green = pixel[1]
-      blue = pixel[2]
-      #Apply this formula to make it greyscale: 0.299 ∙ Red + 0.587 ∙ Green + 0.114 ∙ Blue
-      grayscale_value = int(0.2226 * red + 0.7152 * green + 0.0722 * blue)
-      grayscale_value = max(0, min(255, grayscale_value))
-      # make the pixel either perfect black or perfect white
-      if grayscale_value <= threshold:
-        image_array[i,j] = [0,0,0]
-      else:
-        image_array[i,j] = [255,255,255]
-  #Convert the grayscale array back to an image format
-  gray_image = Image.fromarray(image_array)
-
-  # Resize the image to a 128x128
-  resized_image = gray_image.resize((128, 128), Image.LANCZOS)
-
-  resized_image_array = np.array(resized_image)
-
-  for i in range(128):
-    for j in range(128):
-      pixel = resized_image_array[i, j]
-      if (pixel[0] <= threshold) or (pixel[1] <= threshold) or (pixel[2] <= threshold):
-        resized_image_array[i,j] = [0,0,0]
-      else:
-        resized_image_array[i, j] = [255,255,255]
-
-  resized_gray_image = Image.fromarray(resized_image_array)
-
-  resized_gray_image.show()
-  
-  folder_path = "Inputs"
-  # Generate a unique filename using uuid
-  unique_filename = str(uuid.uuid4()) + ".png"
-  path = os.path.join(folder_path, unique_filename)
-  # Save the black and white image as a new file
-  resized_gray_image.save(path)
-  
+"""
 
 def preprocess_image(input_image_path):
   
@@ -159,31 +110,16 @@ def preprocess_image(input_image_path):
   # Save the black and white image as a new file
   gray_image.save(path)
 
+"""
+----------------------------------------------------------------------------------------------------------------------------------------------------
+Balancing dataset classes section 
 
-
-#Balancing classes 
-
+"""
 NUMBER_OF_CLASSES = 62
-
-total_training_images = (34803 + 38049 + 34184 + 35293 + 33432 + 31067 + 34079 + 35796 + 
-                33884 + 33720 + 7010 + 4091 + 11315 + 4945 + 5420 + 10203 + 2575 + 
-                3271 + 13179 + 3962 + 2473 + 5390 + 10027 + 9149 + 28680 + 9277 + 
-                2566 + 5436 + 23827 + 10927 + 14146 + 4951 + 5026 + 2731 + 5088 + 
-                2698 + 11196 + 5551 + 2792 + 11421 + 28299 + 2493 + 3839 + 9713 + 
-                2788 + 1920 + 2562 + 16937 + 2634 + 12856 + 2761 + 2401 + 3115 + 
-                15934 + 2698 + 20793 + 2837 + 2854 + 2699 + 2820 + 2359 + 2726)
-
-def get_average_images_trainingSet(total_images=total_training_images): 
-  return (int) (total_images/ NUMBER_OF_CLASSES)
-
-#print(get_average_images_trainingSet())
-
-AVERAGE = 11801
 
 def is_folder_below_threashold(file_count, threshold_min, threshold_max):
     return threshold_min <= file_count <= threshold_max 
 
-  
 
 
 #DATA AUGMENTATION -> MAKE SURE TO HAVE THE LIBRARIES USED INSTALED IN THE DATASET FOLDER!
@@ -203,30 +139,31 @@ def augmentation_by_rotation(image_path, direction, img_name, folder_path):
 
   cv2.imwrite(folder_path +"\\"+ img_name + ".png", rotated_image)
 
-  
+
   
 #augmentation_by_rotation("Inputs\hsf_1_00016.png", 'left')
 #augmentation_by_rotation("Inputs\hsf_1_00016.png", 'right')
 
-#Resizing
+#RESIZING
 
-def augmentation_by_resizing(image_path, img_name, folder_path):
+def augmentation_by_resizing(image_path, img_name, folder_path, factor):
   original_image = cv2.imread(image_path)
     
-  resized_image = cv2.resize(original_image, (64, 64), interpolation=cv2.INTER_AREA)
+  resized_image = cv2.resize(original_image, (factor, factor), interpolation=cv2.INTER_AREA)
   
   canvas = 255 * np.ones((128,128,3), dtype=np.uint8)
   
-  x_offset = (128 - 64) // 2
-  y_offset = (128 - 64) // 2
+  x_offset = (128 - factor) // 2
+  y_offset = (128 - factor) // 2
   
-  canvas[y_offset:y_offset+64, x_offset:x_offset+64] = resized_image
+  canvas[y_offset:y_offset+factor, x_offset:x_offset+factor] = resized_image
   
     
   cv2.imwrite(folder_path +"\\"+ img_name + ".png", canvas)
   
 
-#augmentation_by_resizing("Inputs\hsf_1_00016.png")
+#augmentation_by_resizing("Inputs\hsf_1_00016.png", 64)
+#augmentation_by_resizing("Inputs\hsf_1_00016.png", 32)
 
 #TRANSLATION
 
@@ -244,17 +181,16 @@ def augmentation_by_translation(image_path, shift_x, shift_y, img_name, folder_p
 #augmentation_by_translation("Inputs\hsf_1_00016.png", -10, 10)
 #augmentation_by_translation("Inputs\hsf_1_00016.png", 10, -10)  
 
-
-
-#AUGMENTATION IMPLEMENTATION -> 1 time use only!
-
 """
 X = Number of files in folder
-if x < 2200 -> *5
-if 2201 > x < 3500 -> *4
-if 3501 > x < 5000 -> *3
-if 5001 > x < 9000 -> *2
-if x > 9000 -> Do Nothing
+if x < 2500 -> *14
+if 2500 > x < 3000 -> *10
+if 3000 > x < 4000 -> *9
+if 4000 > x < 5000 -> *7
+if 5000 > x < 8000 -> *5
+if 8000 > x < 9000 -> *4
+if 9000 > x < 12000-> *3
+if 12000 > x < 20000-> *2 
 """
 
 def implement_augmentation(dataset_path=BASE_PATH):
@@ -346,4 +282,21 @@ def augment(folder, folder_path):
       augmentation_by_rotation(file_path, 'left', image_name, folder_path)
       count += 1
   
-#implement_augmentation() -> ONE TIME USE!!!!
+"""
+
+----------------------------------------------------------------------------------------------------------------------------------------------------
+"""
+
+"""
+----------------------------------------------------------------------------------------------------------------------------------------------------
+Funtion usage
+
+"""
+
+#clean_mit_data()
+
+#check_corruption()
+
+#implement_augmentation()
+
+
