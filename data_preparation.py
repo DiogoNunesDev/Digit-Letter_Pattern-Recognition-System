@@ -117,7 +117,7 @@ Balancing dataset classes section
 """
 NUMBER_OF_CLASSES = 62
 
-def is_folder_below_threashold(file_count, threshold_min, threshold_max):
+def is_folder_below_threshold(file_count, threshold_min, threshold_max):
     return threshold_min <= file_count <= threshold_max 
 
 
@@ -140,7 +140,6 @@ def augmentation_by_rotation(image_path, direction, img_name, folder_path):
   cv2.imwrite(folder_path +"\\"+ img_name + ".png", rotated_image)
 
 
-  
 #augmentation_by_rotation("Inputs\hsf_1_00016.png", 'left')
 #augmentation_by_rotation("Inputs\hsf_1_00016.png", 'right')
 
@@ -157,12 +156,12 @@ def augmentation_by_resizing(image_path, img_name, folder_path, factor):
   y_offset = (128 - factor) // 2
   
   canvas[y_offset:y_offset+factor, x_offset:x_offset+factor] = resized_image
+  _, bw_resized_image = cv2.threshold(canvas, 127, 255, cv2.THRESH_BINARY)
   
-    
-  cv2.imwrite(folder_path +"\\"+ img_name + ".png", canvas)
+  cv2.imwrite(folder_path +"\\"+ img_name + ".png", bw_resized_image)
   
 
-#augmentation_by_resizing("Inputs\hsf_1_00016.png", 64)
+#augmentation_by_resizing("Inputs\\train_4a_00029.png", 'resize_32', "Inputs", 32)
 #augmentation_by_resizing("Inputs\hsf_1_00016.png", 32)
 
 #TRANSLATION
@@ -179,18 +178,107 @@ def augmentation_by_translation(image_path, shift_x, shift_y, img_name, folder_p
 #augmentation_by_translation("Inputs\hsf_1_00016.png", 10, 10)
 #augmentation_by_translation("Inputs\hsf_1_00016.png", -10, -10)
 #augmentation_by_translation("Inputs\hsf_1_00016.png", -10, 10)
-#augmentation_by_translation("Inputs\hsf_1_00016.png", 10, -10)  
+#augmentation_by_translation("Inputs\hsf_1_00016.png", 10, -10) 
+ 
+#CHANGE PERSPECTIVE
+def augmentation_by_perspective(image_path, perpesctive, factor, img_name, folder_path):
+  original_image = cv2.imread(image_path)
+  
+  height, width = original_image.shape[:2]
+  
+  #Extract the 4 corners, this will be the reference points
+  src_points = np.float32([[0,0], [width - 1, 0], [0, height - 1], [width - 1, height - 1]])
+  
+  #Set the destination points
+  if perpesctive == 'up': #Consists in moving the upward reference points a bit down so it creates a perspective
+    dst_points = np.float32([[0, height * factor], [width - 1, height * factor], [0, height - 1], [width - 1, height - 1]]) 
+    
+  elif perpesctive == 'down': #Consists in moving the downward reference points a bit up so it creates a perspective
+    dst_points = np.float32([[0, 0], [width - 1, 0], [0, height * (1 - factor)], [width - 1, height * (1 - factor)]])
+  
+  elif perpesctive == 'right':
+    dst_points = np.float32([[0,0], [((width - 1) * (1 - factor)), 0], [0, height - 1], [((width - 1) * (1 - factor)), height - 1]])
+  
+  elif perpesctive == 'left':
+    dst_points = np.float32([[width * factor ,0], [width-1, 0], [width * factor, height-1], [width-1, height-1]]) 
+  
+  #Get the perspective matrix based on both the source and destination points
+  perpesctive_matrix = cv2.getPerspectiveTransform(src_points, dst_points)
+  
+  perspective_image = cv2.warpPerspective(original_image, perpesctive_matrix, (128, 128), borderValue=(255,255,255))
+
+  cv2.imwrite(folder_path +"\\"+ img_name + ".png", perspective_image)
+  
+#augmentation_by_perspective("Inputs\\train_41_00000.png", 'up', 0.5)  
+#augmentation_by_perspective("Inputs\\train_41_00000.png", 'down', 0.5)  
+#augmentation_by_perspective("Inputs\\train_41_00000.png", 'right', 0.5)  
+#augmentation_by_perspective("Inputs\\train_41_00000.png", 'left', 0.5)  
+  
+#NOISE APPLICATION
+def augmentation_by_noise(image_path, amount, img_name, folder_path):
+  
+  original_image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+  
+  height, width = original_image.shape[:2]
+  
+  noisy_image = np.copy(original_image)
+   
+  #Select random pixels from the image
+  noise_pixels = []
+  for i in range(amount):
+    x = np.random.randint(0, width)
+    y = np.random.randint(0, height)
+    noisy_image[x, y] = 0
+  
+  cv2.imwrite(folder_path +"\\"+ img_name + ".png", noisy_image)
+  
+#augmentation_by_noise("Inputs\\train_4a_00029.png", 85)
+  
+#ELASTIFICATION
+def augmentation_by_elastification(image_path, alpha, sigma, img_name, folder_path):
+    """
+    Parâmetros:
+    - alpha: Distorcion intensity.
+    - sigma: Distorcion smoothness.
+    """
+    original_image = cv2.imread(image_path)
+    
+    random_state = np.random.RandomState(None)
+
+    shape = original_image.shape[:2]
+    
+    dx = random_state.rand(*shape) * 2 - 1
+    dy = random_state.rand(*shape) * 2 - 1
+
+    # Suavizar os mapas de deslocamento com um desfoque gaussiano
+    dx = cv2.GaussianBlur(dx, (0, 0), sigma) * alpha
+    dy = cv2.GaussianBlur(dy, (0, 0), sigma) * alpha
+
+    # Criar mapas de coordenadas
+    x, y = np.meshgrid(np.arange(shape[1]), np.arange(shape[0]))
+    map_x = np.float32(x + dx)
+    map_y = np.float32(y + dy)
+
+    # Aplicar a distorção elástica
+    elastified_image = cv2.remap(original_image, map_x, map_y, interpolation=cv2.INTER_LINEAR, borderValue=(255, 255, 255))
+    
+    _, elastified_bw_image = cv2.threshold(elastified_image, 127, 255, cv2.THRESH_BINARY)
+    
+    cv2.imwrite(folder_path +"\\"+ img_name + ".png", elastified_bw_image)  
+      
+# Aplicar a distorção elástica
+#augmentation_by_elastification("Inputs\\test_J.png", 50, 5, "elastico3", "Inputs")
 
 """
-X = Number of files in folder
-if x < 2500 -> *14
-if 2500 > x < 3000 -> *10
-if 3000 > x < 4000 -> *9
-if 4000 > x < 5000 -> *7
-if 5000 > x < 8000 -> *5
-if 8000 > x < 9000 -> *4
-if 9000 > x < 12000-> *3
-if 12000 > x < 20000-> *2 
+X = Number of files in folder -> possible transformations: 12
+if x < 2500 -> *14 done
+if 2500 > x < 3000 -> *10 done
+if 3000 > x < 4000 -> *9 done
+if 4000 > x < 5000 -> *7 done
+if 5000 > x < 8000 -> *5 done
+if 8000 > x < 9000 -> *4 done
+if 9000 > x < 12000-> *3 done
+if 12000 > x < 20000-> *2 done
 """
 
 def implement_augmentation(dataset_path=BASE_PATH):
@@ -206,10 +294,10 @@ def implement_augmentation(dataset_path=BASE_PATH):
 
 def augment(folder, folder_path):
   count = len(os.listdir(folder_path))
-  if is_folder_below_threashold(count, 0, 2200):
+  if is_folder_below_threshold(count, 0, 2500):
     
     for file in os.listdir(folder_path):
-      #5 new images per image 
+      #14 new images per image 
       file_path = os.path.join(folder_path, file)
       image_name = folder + "_" + str(count).zfill(5)
       augmentation_by_rotation(file_path, 'right', image_name, folder_path)
@@ -220,7 +308,11 @@ def augment(folder, folder_path):
       count += 1
       
       image_name = folder + "_" + str(count).zfill(5)
-      augmentation_by_resizing(file_path, image_name, folder_path)
+      augmentation_by_resizing(file_path, image_name, folder_path, 64)
+      count += 1
+      
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_resizing(file_path, image_name, folder_path, 32)
       count += 1
       
       image_name = folder + "_" + str(count).zfill(5)
@@ -231,7 +323,183 @@ def augment(folder, folder_path):
       augmentation_by_translation(file_path, -10, -10, image_name, folder_path)
       count += 1
       
-  elif is_folder_below_threashold(count, 2201, 3500):
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_translation(file_path, -10, 10, image_name, folder_path)
+      count += 1
+
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_translation(file_path, 10, -10, image_name, folder_path)
+      count += 1
+      
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_perspective(file_path, 'up', 0.5, image_name, folder_path)  
+      count += 1
+      
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_perspective(file_path, 'down', 0.5, image_name, folder_path)  
+      count += 1
+      
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_perspective(file_path, 'left', 0.5, image_name, folder_path)  
+      count += 1
+      
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_perspective(file_path, 'right', 0.5, image_name, folder_path)  
+      count += 1
+      
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_noise(file_path, 85, image_name, folder_path)
+      count += 1
+      
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_elastification(file_path, 50, 5, image_name, folder_path)
+      count += 1
+      
+  elif is_folder_below_threshold(count, 2501, 3000):
+    
+    for file in os.listdir(folder_path):
+      #10 new images per image
+      file_path = os.path.join(folder_path, file)
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_rotation(file_path, 'right', image_name, folder_path)
+      count += 1
+      
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_rotation(file_path, 'left', image_name, folder_path)
+      count += 1
+      
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_resizing(file_path, image_name, folder_path, 64)
+      count += 1
+      
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_resizing(file_path, image_name, folder_path, 32)
+      count += 1
+      
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_translation(file_path, 10, 10, image_name, folder_path)
+      count += 1
+      
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_translation(file_path, -10, -10, image_name, folder_path)
+      count += 1
+      
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_translation(file_path, -10, 10, image_name, folder_path)
+      count += 1
+
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_elastification(file_path, 50, 5, image_name, folder_path)
+      count += 1
+      
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_perspective(file_path, 'up', 0.5, image_name, folder_path)  
+      count += 1
+      
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_noise(file_path, 85, image_name, folder_path)
+      count += 1
+      
+  elif is_folder_below_threshold(count, 3001, 4000):
+    
+    for file in os.listdir(folder_path):
+      #9 new images per image
+      file_path = os.path.join(folder_path, file)
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_rotation(file_path, 'right', image_name, folder_path)
+      count += 1
+      
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_rotation(file_path, 'left', image_name, folder_path)
+      count += 1
+      
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_resizing(file_path, image_name, folder_path, 64)
+      count += 1
+      
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_resizing(file_path, image_name, folder_path, 32)
+      count += 1
+      
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_translation(file_path, 10, 10, image_name, folder_path)
+      count += 1
+      
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_translation(file_path, -10, -10, image_name, folder_path)
+      count += 1
+      
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_elastification(file_path, 50, 5, image_name, folder_path)
+      count += 1
+
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_noise(file_path, 85, image_name, folder_path)
+      count += 1
+      
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_perspective(file_path, 'up', 0.5, image_name, folder_path)  
+      count += 1
+      
+  elif is_folder_below_threshold(count, 4001, 5000):
+    
+    for file in os.listdir(folder_path):
+      #7 new images per image
+      file_path = os.path.join(folder_path, file)
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_rotation(file_path, 'right', image_name, folder_path)
+      count += 1
+      
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_rotation(file_path, 'left', image_name, folder_path)
+      count += 1
+      
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_resizing(file_path, image_name, folder_path, 64)
+      count += 1
+      
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_translation(file_path, 10, 10, image_name, folder_path)
+      count += 1
+      
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_elastification(file_path, 50, 5, image_name, folder_path)
+      count += 1
+      
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_resizing(file_path, image_name, folder_path, 32)
+      count += 1
+
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_noise(file_path, 85, image_name, folder_path)
+      count += 1
+      
+  elif is_folder_below_threshold(count, 5001, 8000):
+    
+    for file in os.listdir(folder_path):
+      #5 new images per image
+      file_path = os.path.join(folder_path, file)
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_rotation(file_path, 'right', image_name, folder_path)
+      count += 1
+      
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_elastification(file_path, 50, 5, image_name, folder_path)
+      count += 1
+
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_resizing(file_path, image_name, folder_path, 64)
+      count += 1
+      
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_translation(file_path, 10, 10, image_name, folder_path)
+      count += 1
+      
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_noise(file_path, 85, image_name, folder_path)
+      count += 1
+
+  elif is_folder_below_threshold(count, 8001, 9000):
     
     for file in os.listdir(folder_path):
       #4 new images per image
@@ -241,35 +509,35 @@ def augment(folder, folder_path):
       count += 1
       
       image_name = folder + "_" + str(count).zfill(5)
-      augmentation_by_rotation(file_path, 'left', image_name, folder_path)
+      augmentation_by_elastification(file_path, 50, 5, image_name, folder_path)
       count += 1
       
       image_name = folder + "_" + str(count).zfill(5)
-      augmentation_by_resizing(file_path, image_name, folder_path)
+      augmentation_by_resizing(file_path, image_name, folder_path, 64)
       count += 1
       
       image_name = folder + "_" + str(count).zfill(5)
-      augmentation_by_translation(file_path, 10, 10, image_name, folder_path)
+      augmentation_by_noise(file_path, 85, image_name, folder_path)
       count += 1
-      
-  elif is_folder_below_threashold(count, 3501, 5000):
+
+  elif is_folder_below_threshold(count, 9001, 12000):
     
     for file in os.listdir(folder_path):
-      # 3 new images per image
+      #3 new images per image
       file_path = os.path.join(folder_path, file)
       image_name = folder + "_" + str(count).zfill(5)
       augmentation_by_rotation(file_path, 'right', image_name, folder_path)
       count += 1
       
       image_name = folder + "_" + str(count).zfill(5)
-      augmentation_by_rotation(file_path, 'left', image_name, folder_path)
+      augmentation_by_noise(file_path, 85, image_name, folder_path)
       count += 1
       
       image_name = folder + "_" + str(count).zfill(5)
-      augmentation_by_resizing(file_path, image_name, folder_path)
+      augmentation_by_resizing(file_path, image_name, folder_path, 64)
       count += 1
-      
-  elif is_folder_below_threashold(count, 5001, 9000):
+
+  elif is_folder_below_threshold(count, 12001, 20000):
     
     for file in os.listdir(folder_path):
       # Only 2 new images per image
@@ -279,13 +547,8 @@ def augment(folder, folder_path):
       count += 1
       
       image_name = folder + "_" + str(count).zfill(5)
-      augmentation_by_rotation(file_path, 'left', image_name, folder_path)
+      augmentation_by_noise(file_path, 85, image_name, folder_path)
       count += 1
-  
-"""
-
-----------------------------------------------------------------------------------------------------------------------------------------------------
-"""
 
 """
 ----------------------------------------------------------------------------------------------------------------------------------------------------
