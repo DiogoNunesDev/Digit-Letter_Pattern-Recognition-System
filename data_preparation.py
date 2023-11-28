@@ -161,7 +161,7 @@ def augmentation_by_resizing(image_path, img_name, folder_path, factor):
   cv2.imwrite(folder_path +"\\"+ img_name + ".png", bw_resized_image)
   
 
-#augmentation_by_resizing("Inputs\\train_4a_00029.png", 'resize_32', "Inputs", 32)
+#augmentation_by_resizing("Inputs\\train_75_00691.png", 'resize_32', "Inputs", 48)
 #augmentation_by_resizing("Inputs\hsf_1_00016.png", 32)
 
 #TRANSLATION
@@ -232,7 +232,7 @@ def augmentation_by_noise(image_path, amount, img_name, folder_path):
   
   cv2.imwrite(folder_path +"\\"+ img_name + ".png", noisy_image)
   
-#augmentation_by_noise("Inputs\\train_4a_00029.png", 85)
+#augmentation_by_noise("Inputs\\train_4a_00029.png", 85, "noise", "Inputs")
   
 #ELASTIFICATION
 def augmentation_by_elastification(image_path, alpha, sigma, img_name, folder_path):
@@ -250,16 +250,13 @@ def augmentation_by_elastification(image_path, alpha, sigma, img_name, folder_pa
     dx = random_state.rand(*shape) * 2 - 1
     dy = random_state.rand(*shape) * 2 - 1
 
-    # Suavizar os mapas de deslocamento com um desfoque gaussiano
     dx = cv2.GaussianBlur(dx, (0, 0), sigma) * alpha
     dy = cv2.GaussianBlur(dy, (0, 0), sigma) * alpha
 
-    # Criar mapas de coordenadas
     x, y = np.meshgrid(np.arange(shape[1]), np.arange(shape[0]))
     map_x = np.float32(x + dx)
     map_y = np.float32(y + dy)
 
-    # Aplicar a distorção elástica
     elastified_image = cv2.remap(original_image, map_x, map_y, interpolation=cv2.INTER_LINEAR, borderValue=(255, 255, 255))
     
     _, elastified_bw_image = cv2.threshold(elastified_image, 127, 255, cv2.THRESH_BINARY)
@@ -267,19 +264,7 @@ def augmentation_by_elastification(image_path, alpha, sigma, img_name, folder_pa
     cv2.imwrite(folder_path +"\\"+ img_name + ".png", elastified_bw_image)  
       
 # Aplicar a distorção elástica
-#augmentation_by_elastification("Inputs\\test_J.png", 50, 5, "elastico3", "Inputs")
-
-"""
-X = Number of files in folder -> possible transformations: 12
-if x < 2500 -> *14 done
-if 2500 > x < 3000 -> *10 done
-if 3000 > x < 4000 -> *9 done
-if 4000 > x < 5000 -> *7 done
-if 5000 > x < 8000 -> *5 done
-if 8000 > x < 9000 -> *4 done
-if 9000 > x < 12000-> *3 done
-if 12000 > x < 20000-> *2 done
-"""
+#augmentation_by_elastification("Inputs\\train_4a_00029.png", 50, 5, "elastico3", "Inputs")
 
 def implement_augmentation(dataset_path=BASE_PATH):
   for folder in os.listdir(dataset_path):
@@ -297,7 +282,7 @@ def augment(folder, folder_path):
   if is_folder_below_threshold(count, 0, 2500):
     
     for file in os.listdir(folder_path):
-      #14 new images per image 
+      #15 new images per image 
       file_path = os.path.join(folder_path, file)
       image_name = folder + "_" + str(count).zfill(5)
       augmentation_by_rotation(file_path, 'right', image_name, folder_path)
@@ -309,6 +294,10 @@ def augment(folder, folder_path):
       
       image_name = folder + "_" + str(count).zfill(5)
       augmentation_by_resizing(file_path, image_name, folder_path, 64)
+      count += 1
+      
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_resizing(file_path, image_name, folder_path, 48)
       count += 1
       
       image_name = folder + "_" + str(count).zfill(5)
@@ -358,7 +347,7 @@ def augment(folder, folder_path):
   elif is_folder_below_threshold(count, 2501, 3000):
     
     for file in os.listdir(folder_path):
-      #10 new images per image
+      #12 new images per image
       file_path = os.path.join(folder_path, file)
       image_name = folder + "_" + str(count).zfill(5)
       augmentation_by_rotation(file_path, 'right', image_name, folder_path)
@@ -387,6 +376,10 @@ def augment(folder, folder_path):
       image_name = folder + "_" + str(count).zfill(5)
       augmentation_by_translation(file_path, -10, 10, image_name, folder_path)
       count += 1
+      
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_translation(file_path, 10, -10, image_name, folder_path)
+      count += 1
 
       image_name = folder + "_" + str(count).zfill(5)
       augmentation_by_elastification(file_path, 50, 5, image_name, folder_path)
@@ -394,6 +387,10 @@ def augment(folder, folder_path):
       
       image_name = folder + "_" + str(count).zfill(5)
       augmentation_by_perspective(file_path, 'up', 0.5, image_name, folder_path)  
+      count += 1
+      
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_perspective(file_path, 'down', 0.5, image_name, folder_path)  
       count += 1
       
       image_name = folder + "_" + str(count).zfill(5)
@@ -474,7 +471,7 @@ def augment(folder, folder_path):
       augmentation_by_noise(file_path, 85, image_name, folder_path)
       count += 1
       
-  elif is_folder_below_threshold(count, 5001, 8000):
+  elif is_folder_below_threshold(count, 5001, 6500):
     
     for file in os.listdir(folder_path):
       #5 new images per image
@@ -499,18 +496,14 @@ def augment(folder, folder_path):
       augmentation_by_noise(file_path, 85, image_name, folder_path)
       count += 1
 
-  elif is_folder_below_threshold(count, 8001, 9000):
+  elif is_folder_below_threshold(count, 6501, 8500):
     
     for file in os.listdir(folder_path):
       #4 new images per image
       file_path = os.path.join(folder_path, file)
       image_name = folder + "_" + str(count).zfill(5)
       augmentation_by_rotation(file_path, 'right', image_name, folder_path)
-      count += 1
-      
-      image_name = folder + "_" + str(count).zfill(5)
-      augmentation_by_elastification(file_path, 50, 5, image_name, folder_path)
-      count += 1
+      count += 1   
       
       image_name = folder + "_" + str(count).zfill(5)
       augmentation_by_resizing(file_path, image_name, folder_path, 64)
@@ -519,8 +512,12 @@ def augment(folder, folder_path):
       image_name = folder + "_" + str(count).zfill(5)
       augmentation_by_noise(file_path, 85, image_name, folder_path)
       count += 1
+      
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_elastification(file_path, 50, 5, image_name, folder_path)
+      count += 1
 
-  elif is_folder_below_threshold(count, 9001, 12000):
+  elif is_folder_below_threshold(count, 8501, 10500):
     
     for file in os.listdir(folder_path):
       #3 new images per image
@@ -537,17 +534,26 @@ def augment(folder, folder_path):
       augmentation_by_resizing(file_path, image_name, folder_path, 64)
       count += 1
 
-  elif is_folder_below_threshold(count, 12001, 20000):
+  elif is_folder_below_threshold(count, 10501, 13500):
     
     for file in os.listdir(folder_path):
       # Only 2 new images per image
       file_path = os.path.join(folder_path, file)
       image_name = folder + "_" + str(count).zfill(5)
-      augmentation_by_rotation(file_path, 'right', image_name, folder_path)
+      augmentation_by_resizing(file_path, image_name, folder_path, 64)
       count += 1
       
       image_name = folder + "_" + str(count).zfill(5)
       augmentation_by_noise(file_path, 85, image_name, folder_path)
+      count += 1
+  
+  elif is_folder_below_threshold(count, 13501, 21000):
+    
+    for file in os.listdir(folder_path):
+      # Only 2 new images per image
+      file_path = os.path.join(folder_path, file)
+      image_name = folder + "_" + str(count).zfill(5)
+      augmentation_by_resizing(file_path, image_name, folder_path, 64)
       count += 1
 
 """

@@ -1,1 +1,0 @@
-for file in os.listdir(folder_path):
