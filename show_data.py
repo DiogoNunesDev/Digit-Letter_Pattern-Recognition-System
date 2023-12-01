@@ -94,5 +94,5 @@ def print_dict(dict):
 #visualize_sample_training_data(samples)
 
 COUNT_DICT = count_data_per_training_folder()
-print_dict(COUNT_DICT)
+#print_dict(COUNT_DICT)
 

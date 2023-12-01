@@ -567,5 +567,3 @@ Funtion usage
 #check_corruption()
 
 #implement_augmentation()
-
-
