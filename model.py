@@ -10,8 +10,7 @@ Setting up the training set
 
 """
 
-
-
+"""
 def hexadecimal_to_char(hex):
   integer = int(hex, 16)
   label = chr(integer)
@@ -59,6 +58,39 @@ labels = tf.constant(map_file_to_label())
 dataset = tf.data.Dataset.from_tensor_slices((file_paths, labels))
 dataset = dataset.map(process_path, num_parallel_calls=tf.data.experimental.AUTOTUNE)
 
+batch_size = 32  #Start => 32
+dataset = dataset.shuffle(buffer_size=10000)
+dataset = dataset.batch(batch_size)
+dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE)
+"""
+"""
+----------------------------------------------------------------------------------------------------------------------------------------------------
+Model Creation
 
+"""
+
+model = tf.keras.models.Sequential()
+model.add(tf.keras.Input(shape=(128, 128, 1)))
+
+model.add(tf.keras.layers.Conv2D(filters=32, kernel_size=(3, 3)))
+model.add(tf.keras.layers.BatchNormalization())
+model.add(tf.keras.layers.Activation('relu'))
+model.add(tf.keras.layers.MaxPooling2D(pool_size=(2, 2)))
+
+model.add(tf.keras.layers.Conv2D(filters=64, kernel_size=(3, 3)))
+model.add(tf.keras.layers.BatchNormalization())
+model.add(tf.keras.layers.Activation('relu'))
+model.add(tf.keras.layers.MaxPooling2D(pool_size=(2, 2)))
+
+model.add(tf.keras.layers.Flatten())
+model.add(tf.keras.layers.Dense(128, activation='relu'))
+
+model.add(tf.keras.layers.Dropout(0.2))
+model.add(tf.keras.layers.Dense(62, activation='softmax'))
+
+model.compile(optimizer='Adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+
+print(model.summary())
+#tf.keras.utils.plot_model(model, to_file="model.png", show_shapes= True)
     
     
