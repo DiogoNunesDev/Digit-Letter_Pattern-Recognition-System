@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import filedialog, font
 from PIL import Image, ImageTk
 from data_preparation import preprocess_image
+import tensorflow as tf
 
 
 """
@@ -42,7 +43,9 @@ def submit_image():
 
 #Selected image preprocessing and calculations
 def process_image():
-  preprocess_image(file_path)
+  img = preprocess_image(file_path)
+  model = tf.keras.models.load_model('CNN_model.h5')
+  model.predict(img)
 
 
 #GUI Setup

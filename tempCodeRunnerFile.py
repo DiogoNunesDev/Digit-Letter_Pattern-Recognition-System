@@ -5,25 +5,25 @@ import pandas as pd
 from show_data import COUNT_DICT, BASE_PATH
 import os
 import matplotlib.pyplot as plt
+
 """
 ----------------------------------------------------------------------------------------------------------------------------------------------------
 Setting up the training set
 
 """
+
 def hexadecimal_to_char(hex):
   integer = int(hex, 16)
   label = chr(integer)
   return label
 
 def labels_dict():
-  char_labels = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 
-                   'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 
-                   'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 
-                   'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 
-                   'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
-  return {label: i for i, label in enumerate(char_labels)}
-
-print("Labels dict complete")
+  labels = {}
+  for key in COUNT_DICT.keys():
+    labels[key] = hexadecimal_to_char(hex= key[-2:])  
+  
+  print("Labels dict complete")
+  return labels
 
 def file_paths_dict():
   file_paths = []
@@ -51,23 +51,16 @@ def process_path(file_path, label):
 label_mappings = labels_dict()
 file_paths = file_paths_dict()
 
-def map_file_to_label(file_paths, labels_map):
-    labels = []
-    for path in file_paths:
-        label_key = path.split('\\')[-3] 
-        label_char = hexadecimal_to_char(hex=label_key)
-        label = label_mappings[label_char]
-        labels.append(label)
-    return labels
+def map_file_to_label():
+  labels = [label_mappings[os.path.basename(os.path.dirname(path))] for path in file_paths]
+  print("Labels complete")
+  return labels
 
-labels = map_file_to_label(file_paths, label_mappings)
+labels = map_file_to_label()
 
 labels_one_hot = tf.keras.utils.to_categorical(labels, num_classes=62)
-
-print("One hot completed")
-
 # Convert to numpy arrays for compatibility with train_test_split
-file_paths_np = np.array(file_paths) 
+file_paths_np = np.array(file_paths)
 labels_np = np.array(labels_one_hot)
   
 # Splitting into training and validation sets
@@ -112,18 +105,22 @@ model.add(tf.keras.layers.BatchNormalization())
 model.add(tf.keras.layers.Activation('relu'))
 model.add(tf.keras.layers.MaxPooling2D(pool_size=(2, 2)))
 
+model.add(tf.keras.layers.Conv2D(filters=64, kernel_size=(3, 3)))
+model.add(tf.keras.layers.BatchNormalization())
+model.add(tf.keras.layers.Activation('relu'))
+model.add(tf.keras.layers.MaxPooling2D(pool_size=(2, 2)))
+
 model.add(tf.keras.layers.Flatten())
 model.add(tf.keras.layers.Dense(128, activation='relu'))
 
 model.add(tf.keras.layers.Dropout(0.2))
 model.add(tf.keras.layers.Dense(62, activation='softmax'))
 
-model.compile(optimizer='Adam', loss='categorical_crossentropy', metrics=['accuracy'])
+model.compile(optimizer='Adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
 #print(model.summary())
 #tf.keras.utils.plot_model(model, to_file="model.png", show_shapes= True)
 print("Model successfully created!")
-
 
 """
 ----------------------------------------------------------------------------------------------------------------------------------------------------
@@ -133,7 +130,7 @@ Model Training
   
 early_stopping_callblack = tf.keras.callbacks.EarlyStopping(monitor="val_loss", patience=3, restore_best_weights=True)  
   
-num_epochs = 10
+num_epochs = 5
 history = model.fit(
   train_dataset, 
   epochs=num_epochs, 
@@ -142,8 +139,6 @@ history = model.fit(
 )
 
 print("Training Complete")
-
-model.save('CNN_model.h5')
 
 """
 ----------------------------------------------------------------------------------------------------------------------------------------------------

@@ -10,7 +10,7 @@ THIS FILE IS RESPONSABLE FOR EVERYTHING CONCERNING DATA PREPROCESSING
 
 """
 
-BASE_PATH = "C:\\Users\\diogo\\OneDrive\\Ambiente de Trabalho\Datasets\\by_class"
+BASE_PATH = "C:\\Users\\diogo\\OneDrive\\Ambiente de Trabalho\\Datasets\\by_class"
 
 
 """
@@ -102,20 +102,23 @@ def preprocess_image(input_image_path):
         image_array[i,j] = [255,255,255]
   #Convert the grayscale array back to an image format
   gray_image = Image.fromarray(image_array)
-    
+  
+  
+  return gray_image
+  """
   folder_path = "Inputs"
   # Generate a unique filename using uuid
   unique_filename = str(uuid.uuid4()) + ".png"
   path = os.path.join(folder_path, unique_filename)
   # Save the black and white image as a new file
   gray_image.save(path)
-
+  """
+  
 """
 ----------------------------------------------------------------------------------------------------------------------------------------------------
 Balancing dataset classes section 
 
 """
-NUMBER_OF_CLASSES = 62
 
 def is_folder_below_threshold(file_count, threshold_min, threshold_max):
     return threshold_min <= file_count <= threshold_max 
