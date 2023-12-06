@@ -142,7 +142,6 @@ history = model.fit(
 )
 
 print("Training Complete")
-
 model.save('CNN_model.h5')
 
 """

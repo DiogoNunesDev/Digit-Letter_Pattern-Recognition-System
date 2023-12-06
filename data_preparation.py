@@ -81,7 +81,7 @@ def preprocess_image(input_image_path):
   
   #Convert the image to a NumPy array, to access each pixel and change it to a greyscale
   image_array = np.array(resized_image)
-
+  print(image_array.shape)
   height, width, _ = image_array.shape
 
   #Make the image grayscale and use contrast
@@ -100,19 +100,21 @@ def preprocess_image(input_image_path):
         image_array[i,j] = [0,0,0]
       else:
         image_array[i,j] = [255,255,255]
-  #Convert the grayscale array back to an image format
-  gray_image = Image.fromarray(image_array)
   
-  
-  return gray_image
-  """
+  one_channel_image_array = image_array[:, :, 0]
+  print(one_channel_image_array.shape)
+  return one_channel_image_array  
+
+"""
   folder_path = "Inputs"
   # Generate a unique filename using uuid
   unique_filename = str(uuid.uuid4()) + ".png"
   path = os.path.join(folder_path, unique_filename)
   # Save the black and white image as a new file
   gray_image.save(path)
-  """
+"""
+  
+
   
 """
 ----------------------------------------------------------------------------------------------------------------------------------------------------

@@ -4,7 +4,7 @@ from tkinter import filedialog, font
 from PIL import Image, ImageTk
 from data_preparation import preprocess_image
 import tensorflow as tf
-
+import numpy as np
 
 """
 
@@ -41,11 +41,29 @@ def submit_image():
       image_label.image = img  # Keep a reference to the image
       image_label.pack()
 
+
+def get_class(predictions):
+  index = np.argmax(predictions, axis=1)[0]
+  print(index)
+  char_labels = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 
+                   'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 
+                   'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 
+                   'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 
+                   'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
+  
+  return char_labels[index]
+
 #Selected image preprocessing and calculations
 def process_image():
-  img = preprocess_image(file_path)
+  img_array = preprocess_image(file_path)
+  img_array = np.expand_dims(img_array, axis=0)
+  img_array = img_array / 255
+  print(img_array.shape)
   model = tf.keras.models.load_model('CNN_model.h5')
-  model.predict(img)
+  predictions = model.predict(img_array)
+  prediction = get_class(predictions)
+  prediction_label.config(text=f"Predicted Class: {prediction}")
+
 
 
 #GUI Setup
@@ -54,9 +72,12 @@ button_frame = tk.Frame(window)
 button_frame.pack(side=tk.BOTTOM)
 
 submit_btn = tk.Button(button_frame, text="Submit Image", command=submit_image, width=20, height=2, font=button_font, borderwidth=4, relief=tk.RAISED)
-submit_btn.pack(side=tk.LEFT, pady=20, padx=20)
+submit_btn.pack(side=tk.LEFT, pady=5, padx=20)
 
 process_btn = tk.Button(button_frame, text="Process Image", command=process_image, width=20, height=2, font= button_font, borderwidth=4, relief=tk.RAISED)
-process_btn.pack(side=tk.RIGHT, pady=20, padx=20)
+process_btn.pack(side=tk.RIGHT, pady=5, padx=20)
+
+prediction_label = tk.Label(window, text=" ", font=("Courier New", 14))
+prediction_label.pack(side=tk.BOTTOM, pady=0)
 
 window.mainloop()
