@@ -59,12 +59,10 @@ def process_image():
   img_array = np.expand_dims(img_array, axis=0)
   img_array = img_array / 255
   print(img_array.shape)
-  model = tf.keras.models.load_model('CNN_model.h5')
+  model = tf.keras.models.load_model('CNN_model_V1.h5')
   predictions = model.predict(img_array)
   prediction = get_class(predictions)
   prediction_label.config(text=f"Predicted Class: {prediction}")
-
-
 
 #GUI Setup
 button_font = font.Font(family="Courier New", size=12, weight="bold")

@@ -2,42 +2,15 @@ from sklearn.model_selection import train_test_split
 import tensorflow as tf
 import numpy as np
 import pandas as pd
-from show_data import COUNT_DICT, BASE_PATH
+from show_data import BASE_PATH
 import os
 import matplotlib.pyplot as plt
+from dataset import create_dataset, compute_weight_classes
 """
 ----------------------------------------------------------------------------------------------------------------------------------------------------
 Setting up the training set
 
 """
-def hexadecimal_to_char(hex):
-  integer = int(hex, 16)
-  label = chr(integer)
-  return label
-
-def labels_dict():
-  char_labels = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 
-                   'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 
-                   'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 
-                   'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 
-                   'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
-  return {label: i for i, label in enumerate(char_labels)}
-
-print("Labels dict complete")
-
-def file_paths_dict():
-  file_paths = []
-  for folder in os.listdir(BASE_PATH):
-    folder_path = os.path.join(BASE_PATH, folder)
-    for sub_folder in os.listdir(folder_path):
-      if sub_folder.startswith('train_'):
-        sub_folder_path = os.path.join(folder_path, sub_folder)
-        for file in os.listdir(sub_folder_path):
-          file_path = os.path.join(sub_folder_path, file)
-          file_paths.append(file_path)
-  
-  print("File paths dict complete")
-  return file_paths
 
 def process_path(file_path, label):
 
@@ -47,32 +20,12 @@ def process_path(file_path, label):
     img = tf.cast(img, tf.float32) / 255.0
     
     return img, label
-    
-label_mappings = labels_dict()
-file_paths = file_paths_dict()
 
-def map_file_to_label(file_paths, labels_map):
-    labels = []
-    for path in file_paths:
-        label_key = path.split('\\')[-3] 
-        label_char = hexadecimal_to_char(hex=label_key)
-        label = label_mappings[label_char]
-        labels.append(label)
-    return labels
+file_paths_np, labels_np = create_dataset('train_')
 
-labels = map_file_to_label(file_paths, label_mappings)
-
-labels_one_hot = tf.keras.utils.to_categorical(labels, num_classes=62)
-
-print("One hot completed")
-
-# Convert to numpy arrays for compatibility with train_test_split
-file_paths_np = np.array(file_paths) 
-labels_np = np.array(labels_one_hot)
-  
 # Splitting into training and validation sets
 train_file_paths, val_file_paths, train_labels, val_labels = train_test_split(
-    file_paths_np, labels_np, test_size=0.02, random_state=42, stratify=labels_np
+    file_paths_np, labels_np, test_size=0.05, random_state=42, stratify=labels_np
 )
 
 print("train test split, DONE")
@@ -102,25 +55,26 @@ print("Training and validation sets, fully prepared!")
 ----------------------------------------------------------------------------------------------------------------------------------------------------
 Model Creation
 
-"""
 
+"""
 model = tf.keras.models.Sequential()
 model.add(tf.keras.Input(shape=(128, 128, 1)))
 
-model.add(tf.keras.layers.Conv2D(filters=32, kernel_size=(3, 3)))
-model.add(tf.keras.layers.BatchNormalization())
-model.add(tf.keras.layers.Activation('relu'))
+model.add(tf.keras.layers.Conv2D(filters=64, kernel_size=(5, 5), activation='relu'))
+model.add(tf.keras.layers.Conv2D(filters=64, kernel_size=(3, 3), activation='relu'))
 model.add(tf.keras.layers.MaxPooling2D(pool_size=(2, 2)))
+model.add(tf.keras.layers.BatchNormalization())
 
 model.add(tf.keras.layers.Flatten())
 model.add(tf.keras.layers.Dense(128, activation='relu'))
 
-model.add(tf.keras.layers.Dropout(0.2))
+model.add(tf.keras.layers.Dropout(0.2))  
 model.add(tf.keras.layers.Dense(62, activation='softmax'))
 
-model.compile(optimizer='Adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
-#print(model.summary())
+model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+
+print(model.summary())
 #tf.keras.utils.plot_model(model, to_file="model.png", show_shapes= True)
 print("Model successfully created!")
 
@@ -130,15 +84,36 @@ print("Model successfully created!")
 Model Training
 
 """
-  
-early_stopping_callblack = tf.keras.callbacks.EarlyStopping(monitor="val_loss", patience=3, restore_best_weights=True)  
-  
-num_epochs = 10
+train_data = {
+  '0': 34803, '1': 38049, '2': 34184, '3': 35293, '4': 33432, '5': 31067, '6': 34079, '7': 35796,
+  '8': 33884, '9': 33720, 'A': 35050, 'B': 32728, 'C': 33945, 'D': 39560, 'E': 32520, 'F': 40812,
+  'G': 33475, 'H': 32710, 'I': 39537, 'J': 39620, 'K': 39568, 'L': 32340, 'M': 40108, 'N': 36596,
+  'O': 28680, 'P': 37108, 'Q': 33358, 'R': 32616, 'S': 23827, 'T': 32781, 'U': 28292, 'V': 39608,
+  'W': 30156, 'X': 35503, 'Y': 30528, 'Z': 35074, 'a': 33588, 'b': 33306, 'c': 36296, 'd': 34263,
+  'e': 28299, 'f': 39888, 'g': 38390, 'h': 38852, 'i': 36244, 'j': 30720, 'k': 33306, 'l': 33874,
+  'm': 34242, 'n': 38568, 'o': 35893, 'p': 38416, 'q': 31150, 'r': 31868, 's': 35074, 't': 41586,
+  'u': 36881, 'v': 37102, 'w': 35087, 'x': 36660, 'y': 37744, 'z': 35438
+}
+
+
+#Weights: Wj = n_samples / (n_classes * n_samplesj)
+
+class_weights = compute_weight_classes(train_data=train_data)
+print("Weights computed!")
+
+early_stopping = tf.keras.callbacks.EarlyStopping(monitor="val_accuracy", patience=5, verbose=1, mode="max", restore_best_weights=True)  
+
+reduce_on_plateu = tf.keras.callbacks.ReduceLROnPlateau(monitor="val_accuracy",factor=0.2,patience=5,verbose=1,mode="max",min_lr=0.0001,)
+
+
+
+num_epochs = 15
 history = model.fit(
   train_dataset, 
   epochs=num_epochs, 
   validation_data=val_dataset, 
-  callbacks=[early_stopping_callblack]
+  callbacks=[early_stopping, reduce_on_plateu],
+  class_weight=class_weights
 )
 
 print("Training Complete")
@@ -149,6 +124,7 @@ model.save('CNN_model.h5')
 Training results
 
 """
+
 # Plot training & validation accuracy
 plt.plot(history.history['accuracy'], label='Training accuracy')
 plt.plot(history.history['val_accuracy'], label='Validation accuracy')
