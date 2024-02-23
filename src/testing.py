@@ -3,7 +3,7 @@ import tensorflow as tf
 from tensorflow.keras.preprocessing import image
 import os
 import numpy as np
-from dataset import create_dataset
+from src.dataset import create_dataset
 import matplotlib.pyplot as plt
 import seaborn as sns
 

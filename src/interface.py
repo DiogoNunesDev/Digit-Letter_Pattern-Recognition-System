@@ -2,7 +2,7 @@ import os
 import tkinter as tk
 from tkinter import filedialog, font
 from PIL import Image, ImageTk
-from data_preparation import preprocess_image
+from src.data_preparation import preprocess_image
 import tensorflow as tf
 import numpy as np
 

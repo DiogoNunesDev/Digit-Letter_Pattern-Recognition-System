@@ -2,10 +2,10 @@ from sklearn.model_selection import train_test_split
 import tensorflow as tf
 import numpy as np
 import pandas as pd
-from show_data import BASE_PATH
+from src.show_data import BASE_PATH
 import os
 import matplotlib.pyplot as plt
-from dataset import create_dataset, compute_weight_classes
+from src.dataset import create_dataset, compute_weight_classes
 """
 ----------------------------------------------------------------------------------------------------------------------------------------------------
 Setting up the training set
